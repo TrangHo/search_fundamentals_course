@@ -195,13 +195,7 @@
         "type": "long"
       },
       "department": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword",
-            "ignore_above": 512
-          }
-        }
+        "type": "keyword"
       },
       "departmentId":  {
         "type": "long"
