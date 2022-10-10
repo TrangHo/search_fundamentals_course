@@ -41,7 +41,7 @@
         "type": "boolean"
       },
       "regularPrice": {
-         "type": "float_range"
+         "type": "float"
       },
       "salePrice": {
         "type": "float"

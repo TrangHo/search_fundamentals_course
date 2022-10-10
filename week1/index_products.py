@@ -119,73 +119,23 @@ def index_file(file, index_name):
             continue
         #### Step 2.b: Create a valid OpenSearch Doc and bulk index 2000 docs at a time
         the_doc = {
-            "id": long(doc['productId'][0]),
+            "_id": int(doc.get('productId', [])[0]),
             "_index": index_name,
-            "productId": long(doc['productId'][0]),
-            # "sku": doc['sku'][0],
-            # "name": doc['name'][0],
-            # "type": doc['type'][0],
-            # "startDate": doc['startDate'][0],
-            # "active": doc['active'][0],
-            # "regularPrice": doc['regularPrice'][0],
-            # "salePrice": doc['salePrice'][0],
-            # "artistName": doc['artistName'][0],
-            # "onSale": doc['onSale'][0],
-            # "digital": doc['digital'][0],
-            # "frequentlyPurchasedWith": doc['frequentlyPurchasedWith'],
-            # "accessories": doc['accessories'],
-            # "relatedProducts": doc['relatedProducts'],
-            # "crossSell": doc['crossSell'][0],
-            # "salesRankShortTerm": doc['salesRankShortTerm'][0],
-            # "salesRankMediumTerm": doc['salesRankMediumTerm'][0],
-            # "salesRankLongTerm": doc['salesRankLongTerm'][0],
-            # "bestSellingRank": doc['bestSellingRank'][0],
-            # "url": doc['url'][0],
-            # "categoryPath": doc['categoryPath'],
-            # "categoryPathIds": doc['categoryPathIds'],
-            # "categoryLeaf": doc['categoryLeaf'][0],
-            # "categoryPathCount": doc['categoryLeaf'][0],
-            # "customerReviewCount": doc['customerReviewCount'][0],
-            # "customerReviewAverage": doc['customerReviewAverage'][0],
-            # "inStoreAvailability": doc['inStoreAvailability'][0],
-            # "onlineAvailability": doc['onlineAvailability'][0],
-            # "releaseDate": doc['releaseDate'][0],
-            # "shippingCost": doc['shippingCost'][0],
-            # "shortDescription": doc['shortDescription'][0],
-            # "shortDescriptionHtml": doc['shortDescriptionHtml'][0],
-            # "class": doc['class'][0],
-            # "classId": doc['classId'][0],
-            # "subclass": doc['subclass'][0],
-            # "subclassId": doc['subclassId'][0],
-            # "department": doc['department'][0],
-            # "departmentId": doc['departmentId'][0],
-            # "bestBuyItemId": doc['bestBuyItemId'][0],
-            # "description": doc['description'][0],
-            # "manufacturer": doc['manufacturer'][0],
-            # "modelNumber": doc['modelNumber'][0],
-            # "image": doc['image'][0],
-            # "condition": doc['condition'][0],
-            # "inStorePickup": doc['inStorePickup'][0],
-            # "homeDelivery": doc['homeDelivery'][0],
-            # "quantityLimit": doc['quantityLimit'][0],
-            # "color": doc['color'][0],
-            # "depth": doc['depth'][0],
-            # "height": doc['height'][0],
-            # "weight": doc['weight'][0],
-            # "shippingWeight": doc['shippingWeight'][0],
-            # "width": doc['width'][0],
-            # "longDescription": doc['longDescription'][0],
-            # "longDescriptionHtml": doc['longDescriptionHtml'][0],
-            # "features": doc['features']
         }
+        for key in doc:
+            if isinstance(doc[key], list) and len(doc[key]) == 1:
+                the_doc[key] = doc[key][0]
+            elif isinstance(doc[key], list) and len(doc[key]) == 0:
+                the_doc[key] = None
+            else:
+                the_doc[key] = doc[key]
         docs.append(the_doc)
-        print("1111", len(docs), the_doc)
-        if len(docs) == 2000:
-            print("HERE HERE HERE")
-            print(bulk(client, docs))
-            print(client.cat.count(index_name, params={"v": "true"}))
-            docs_indexed += len(docs)
-            docs = []
+        
+    # divide docs into 2000 chunk to bulk upddate
+    for i in range(0, len(docs), 2000):
+        chunk = docs[i:i + 2000]
+        bulk(client, chunk)
+        docs_indexed += len(chunk)
 
     return docs_indexed
 
