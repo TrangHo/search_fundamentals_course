@@ -112,19 +112,89 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
     query_obj = {
         'size': 10,
         "query": {
-            "bool": {
-                "must": [
-                    {
-                        "query_string": {
-                            "query": user_query,
-                            "analyzer": "english",
-                            "phrase_slop": 3,
-                            "fields": ["name^100", "shortDescription^50", "longDescription^10", "department"]
-                            
-                        }
+            "function_score": {
+                "query": {
+                    "bool": {
+                        "must": [
+                            {
+                                "query_string": {
+                                    "query": user_query,
+                                    # "analyzer": "english",
+                                    "phrase_slop": 3,
+                                    "fields": ["name^100", "shortDescription^50", "longDescription^10", "color^5"],
+                                }
+                            }
+                        ],
+                        "filter": filters
                     }
-                ],
-                "filter": filters
+                },
+                "boost_mode": "multiply",
+                "score_mode": "sum",
+                "functions": [
+                    {
+                        "field_value_factor": {
+                            "field": "salesRankShortTerm",
+                            "factor": 50,
+                            "modifier": "reciprocal",
+                            "missing": 100000000
+                        }
+                    },
+                    # {
+                    #     "field_value_factor": {
+                    #         "field": "bestSellingRank",
+                    #         "modifier": "reciprocal",
+                    #         "missing": 100000000,
+                    #         "factor": 100
+                    #     }
+                    # },
+                    {
+                        "field_value_factor": {
+                            "field": "salesRankLongTerm",
+                            "factor": 200,
+                            "modifier": "reciprocal",
+                            "missing": 100000000
+                        }
+                    },
+                    {
+                        "filter": { 
+                            "bool": {
+                                "must_not": {
+                                    "match": { "name": "for" }
+                                }
+                            }
+                        },
+                        "weight": 100
+                    },
+                    {
+                        "filter": { 
+                            "bool": {
+                                "must_not": {
+                                    "term": { "department": "VIDEO/COMPACT DISC" }
+                                }
+                            }
+                        },
+                        "weight": 100
+                    },
+                    {
+                        "filter": { 
+                            "bool": {
+                                "must_not": {
+                                    "bool": {
+                                        "should": [
+                                            {
+                                                "term": { "categoryPath": "Accessories" }
+                                            },
+                                            {
+                                                "match": { "shortDescription": "Compatible" }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        "weight": 100
+                    }
+                ]
             }
         },
         "sort": [
