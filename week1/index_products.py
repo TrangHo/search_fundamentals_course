@@ -122,18 +122,20 @@ def index_file(file, index_name):
             "_id": int(doc.get('productId', [])[0]),
             "_index": index_name,
         }
-        for key in doc:
-            if isinstance(doc[key], list) and len(doc[key]) == 1:
-                the_doc[key] = doc[key][0]
-            elif isinstance(doc[key], list) and len(doc[key]) == 0:
-                the_doc[key] = None
-            else:
-                the_doc[key] = doc[key]
+        # for key in doc:
+        #     if isinstance(doc[key], list) and len(doc[key]) == 1:
+        #         the_doc[key] = doc[key][0]
+        #     elif isinstance(doc[key], list) and len(doc[key]) == 0:
+        #         the_doc[key] = None
+        #     else:
+        #         the_doc[key] = doc[key]
+        the_doc.update(doc)
         docs.append(the_doc)
         
     # divide docs into 2000 chunk to bulk upddate
-    for i in range(0, len(docs), 2000):
-        chunk = docs[i:i + 2000]
+    chunk_size = 2000
+    for i in range(0, len(docs), chunk_size):
+        chunk = docs[i:i + chunk_size]
         bulk(client, chunk)
         docs_indexed += len(chunk)
 
