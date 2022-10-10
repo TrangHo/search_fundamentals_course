@@ -110,7 +110,7 @@ def query():
 def create_query(user_query, filters, sort="_score", sortDir="desc"):
     print("Query: {} Filters: {} Sort: {}".format(user_query, filters, sort))
     query_obj = {
-        'size': 10,
+        'size': 100,
         "query": {
             "function_score": {
                 "query": {
@@ -119,9 +119,9 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
                             {
                                 "query_string": {
                                     "query": user_query,
-                                    # "analyzer": "english",
+                                    "analyzer": "english",
                                     "phrase_slop": 3,
-                                    "fields": ["name^100", "shortDescription^50", "longDescription^10", "color^5"],
+                                    "fields": ["name^300", "shortDescription^50", "longDescription^10", "color^5"],
                                 }
                             }
                         ],
@@ -129,7 +129,7 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
                     }
                 },
                 "boost_mode": "multiply",
-                "score_mode": "sum",
+                "score_mode": "avg",
                 "functions": [
                     {
                         "field_value_factor": {
@@ -139,18 +139,18 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
                             "missing": 100000000
                         }
                     },
-                    # {
-                    #     "field_value_factor": {
-                    #         "field": "bestSellingRank",
-                    #         "modifier": "reciprocal",
-                    #         "missing": 100000000,
-                    #         "factor": 100
-                    #     }
-                    # },
+                    {
+                        "field_value_factor": {
+                            "field": "customerReviewCount",
+                            # "modifier": "reciprocal",
+                            "missing": 0,
+                            "factor": 0.8,
+                        }
+                    },
                     {
                         "field_value_factor": {
                             "field": "salesRankLongTerm",
-                            "factor": 200,
+                            "factor": 50,
                             "modifier": "reciprocal",
                             "missing": 100000000
                         }
@@ -159,11 +159,11 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
                         "filter": { 
                             "bool": {
                                 "must_not": {
-                                    "match": { "name": "for" }
+                                    "term": { "name": "for" }
                                 }
                             }
                         },
-                        "weight": 100
+                        "weight": 50
                     },
                     {
                         "filter": { 
@@ -174,26 +174,26 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
                             }
                         },
                         "weight": 100
-                    },
-                    {
-                        "filter": { 
-                            "bool": {
-                                "must_not": {
-                                    "bool": {
-                                        "should": [
-                                            {
-                                                "term": { "categoryPath": "Accessories" }
-                                            },
-                                            {
-                                                "match": { "shortDescription": "Compatible" }
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        },
-                        "weight": 100
                     }
+                    # {
+                    #     "filter": { 
+                    #         "bool": {
+                    #             "must_not": {
+                    #                 "bool": {
+                    #                     "should": [
+                    #                         {
+                    #                             "term": { "categoryPath": "Accessories" }
+                    #                         },
+                    #                         {
+                    #                             "match": { "shortDescription": "Compatible" }
+                    #                         }
+                    #                     ]
+                    #                 }
+                    #             }
+                    #         }
+                    #     },
+                    #     "weight": 50
+                    # }
                 ]
             }
         },
