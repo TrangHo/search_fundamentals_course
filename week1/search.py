@@ -94,10 +94,11 @@ def query():
     print("query obj: {}".format(query_obj))
 
     #### Step 4.b.ii
-    response = None   # TODO: Replace me with an appropriate call to OpenSearch
+    products_index = "bbuy_products"
+    response = opensearch.search(body=query_obj, index=products_index)   # TODO: Replace me with an appropriate call to OpenSearch
     # Postprocess results here if you so desire
 
-    #print(response)
+    print(response)
     if error is None:
         return render_template("search_results.jinja2", query=user_query, search_response=response,
                                display_filters=display_filters, applied_filters=applied_filters,
@@ -111,10 +112,75 @@ def create_query(user_query, filters, sort="_score", sortDir="desc"):
     query_obj = {
         'size': 10,
         "query": {
-            "match_all": {} # Replace me with a query that both searches and filters
+            "bool": {
+                "must": [
+                    {
+                        "query_string": {
+                            "query": user_query,
+                            "analyzer": "english",
+                            "phrase_slop": 3,
+                            "fields": ["name^100", "shortDescription^50", "longDescription^10", "department"]
+                            
+                        }
+                    }
+                ],
+                "filter": filters
+            }
         },
+        "sort": [
+            {
+                sort: {
+                    "order": sortDir
+                }
+            }
+        ],
         "aggs": {
-            #### Step 4.b.i: create the appropriate query and aggregations here
+           "regularPrice": {
+                "range": {
+                    "field": "regularPrice",
+                    "ranges": [
+                        {   
+                            "key": "$",
+                            "from": 0,
+                            "to": 9.99
+                        },
+                        {   
+                            "key": "$$",
+                            "from": 10,
+                            "to": 99.99
+                        },
+                        {   
+                            "key": "$$$",
+                            "from": 100,
+                            "to": 999.99
+                        },
+                        {   
+                            "key": "$$$$",
+                            "from": 1000,
+                            "to": 9999.99
+                        },
+                        {   
+                            "key": "$$$$$",
+                            "from": 10000,
+                            "to": 99999.99
+                        },
+                        {   
+                            "key": "$$$$$$",
+                            "from": 100000
+                        }
+                    ]
+                }
+           },
+           "department": {
+                "terms": {
+                    "field": "department"
+                }
+           },
+           "missing_images": {
+                "missing": {
+                    "field": "image"
+                }
+           }
 
         }
     }
